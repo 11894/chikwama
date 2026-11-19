@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chikwama Alert — Predictive Cash-Flow Risk for SMEs</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-950:#0a1830;
+    --navy-900:#0e2149;
+    --navy-800:#152d5c;
+    --gold-500:#c9a227;
+    --gold-400:#e0bc4f;
+    --gold-100:#f7ecc9;
+    --paper:#f7f5f0;
+    --ink:#0e1524;
+    --ink-soft:#5b6478;
+    --green:#2f8f5b;
+    --red:#c1443a;
+    --amber:#c98a1f;
+    --line:rgba(14,33,73,0.12);
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  .topbar{
+    background:linear-gradient(120deg,var(--navy-950),var(--navy-800));
+    color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:3px solid var(--gold-500);
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--gold-400),var(--gold-500));
+    display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;color:var(--navy-950);font-size:20px;}
+  .brand-text h1{font-family:'Fraunces',serif;font-size:22px;margin:0;font-weight:600;}
+  .brand-text p{margin:0;font-size:11px;color:var(--gold-100);letter-spacing:0.6px;text-transform:uppercase;}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .pill{background:rgba(255,255,255,0.08);padding:6px 14px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold-100);}
+  .view-toggle{display:flex;background:rgba(255,255,255,0.08);border-radius:999px;padding:3px;}
+  .view-toggle button{border:none;background:transparent;color:#cfd6e6;padding:7px 16px;border-radius:999px;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .view-toggle button.active{background:var(--gold-500);color:var(--navy-950);font-weight:600;}
+
+  .layout{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 78px);}
+  .sidebar{background:var(--navy-900);color:#e9edf5;padding:24px 16px;}
+  .sidebar h3{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--gold-400);margin:6px 0 12px 8px;}
+  .sme-item{padding:12px;border-radius:10px;cursor:pointer;margin-bottom:8px;border:1px solid transparent;}
+  .sme-item:hover{background:rgba(255,255,255,0.06);}
+  .sme-item.active{background:rgba(201,162,39,0.16);border-color:rgba(201,162,39,0.4);}
+  .sme-item .biz{font-size:13.5px;font-weight:600;}
+  .sme-item .sector{font-size:11.5px;color:#b9c2d4;}
+  .risk-chip{display:inline-block;margin-top:6px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;padding:2px 9px;border-radius:999px;}
+  .risk-chip.high{background:rgba(193,68,58,0.2);color:#f18e85;}
+  .risk-chip.med{background:rgba(201,138,31,0.2);color:#f0c26a;}
+  .risk-chip.low{background:rgba(47,143,91,0.2);color:#7fd6a3;}
+  .disclaimer-box{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:11px;line-height:1.5;color:#b9c2d4;margin-top:20px;}
+
+  .main{padding:28px 32px;}
+  .header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:14px;}
+  .header-row h2{font-family:'Fraunces',serif;font-size:27px;margin:0 0 4px 0;}
+  .header-row .sub{color:var(--ink-soft);font-size:13px;}
+
+  .stat-strip{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+  .stat{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .stat .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.5px;}
+  .stat .value{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;margin-top:2px;}
+  .stat .value.warn{color:var(--red);}
+
+  .alert-banner{
+    display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:14px;margin-bottom:20px;
+    border:1px solid; 
+  }
+  .alert-banner.high{background:rgba(193,68,58,0.08);border-color:rgba(193,68,58,0.35);}
+  .alert-banner.med{background:rgba(201,138,31,0.08);border-color:rgba(201,138,31,0.35);}
+  .alert-banner.low{background:rgba(47,143,91,0.08);border-color:rgba(47,143,91,0.35);}
+  .alert-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .alert-banner.high .alert-icon{background:var(--red);color:#fff;}
+  .alert-banner.med .alert-icon{background:var(--amber);color:#fff;}
+  .alert-banner.low .alert-icon{background:var(--green);color:#fff;}
+  .alert-copy .title{font-weight:700;font-size:15.5px;margin-bottom:2px;}
+  .alert-copy .desc{font-size:13px;color:var(--ink-soft);}
+
+  .grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;}
+  @media (max-width:1000px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 1px 2px rgba(14,33,73,0.04);}
+  .card h3{margin:0 0 14px 0;font-size:14px;text-transform:uppercase;letter-spacing:0.8px;color:var(--navy-800);}
+  .card h3 span{color:var(--ink-soft);text-transform:none;letter-spacing:0;font-weight:400;font-size:12px;}
+
+  .driver-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13px;}
+  .driver-row:last-child{border-bottom:none;}
+  .driver-bar-track{flex:1;height:6px;background:#eee;border-radius:3px;margin:0 12px;overflow:hidden;}
+  .driver-bar-fill{height:100%;border-radius:3px;}
+  .driver-val{font-family:'IBM Plex Mono',monospace;font-size:12px;width:40px;text-align:right;}
+
+  .action-card{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+  .action-card .tag{display:inline-block;font-size:10.5px;font-family:'IBM Plex Mono',monospace;padding:2px 9px;border-radius:999px;background:var(--gold-100);color:var(--navy-800);margin-bottom:6px;}
+  .action-card h4{margin:0 0 4px 0;font-size:14px;}
+  .action-card p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+  .action-card button{margin-top:10px;background:var(--navy-900);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;}
+  .action-card button:hover{background:var(--navy-800);}
+
+  table.txn{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.txn th{text-align:left;color:var(--ink-soft);font-weight:600;font-size:11px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line);}
+  table.txn td{padding:8px 8px;border-bottom:1px solid var(--line);}
+  table.txn tr:last-child td{border-bottom:none;}
+  .amt.in{color:var(--green);font-family:'IBM Plex Mono',monospace;}
+  .amt.out{color:var(--red);font-family:'IBM Plex Mono',monospace;}
+  .src{font-size:11px;color:var(--ink-soft);}
+
+  /* lender view */
+  .portfolio-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .portfolio-table th{text-align:left;padding:10px;font-size:11px;text-transform:uppercase;color:var(--ink-soft);border-bottom:2px solid var(--line);}
+  .portfolio-table td{padding:12px 10px;border-bottom:1px solid var(--line);}
+  .risk-badge{padding:3px 10px;border-radius:999px;font-size:11px;font-family:'IBM Plex Mono',monospace;}
+  .risk-badge.high{background:rgba(193,68,58,0.12);color:var(--red);}
+  .risk-badge.med{background:rgba(201,138,31,0.12);color:var(--amber);}
+  .risk-badge.low{background:rgba(47,143,91,0.12);color:var(--green);}
+  .mini-bar{width:70px;height:6px;background:#eee;border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
+  .mini-bar-fill{height:100%;}
+
+  #ownerView, #lenderView{display:none;}
+  #ownerView.active, #lenderView.active{display:block;}
+
+  footer.disclaimer{margin-top:10px;padding:16px 32px;font-size:11.5px;color:var(--ink-soft);border-top:1px solid var(--line);line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div class="brand-text">
+      <h1>Chikwama Alert</h1>
+      <p>Predictive Cash-Flow Risk · Malawian SMEs</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="view-toggle">
+      <button id="btnOwner" class="active" onclick="setView('owner')">SME Owner View</button>
+      <button id="btnLender" onclick="setView('lender')">Lender / NBM View</button>
+    </div>
+    <div class="pill">FINOVATE 2026 · Prototype</div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h3>Your businesses</h3>
+    <div id="smeList"></div>
+    <div class="disclaimer-box">
+      Transaction histories, forecasts and risk scores here are <strong>simulated</strong> for demonstration. In production, figures would be derived from consented mobile money and till data.
+    </div>
+  </div>
+
+  <!-- OWNER VIEW -->
+  <div class="main" id="ownerView">
+    <div class="header-row">
+      <div>
+        <h2 id="bizName">Chikondi's Grocery</h2>
+        <div class="sub" id="bizMeta">Retail / General Store · Lilongwe · Chikwama since 2022</div>
+      </div>
+      <div class="stat-strip" style="margin:0;">
+        <div class="stat"><div class="label">Current Balance</div><div class="value" id="statBalance">MWK 184,200</div></div>
+        <div class="stat"><div class="label">Predicted Low Point (30d)</div><div class="value warn" id="statLow">MWK -42,600</div></div>
+        <div class="stat"><div class="label">Days to Crunch</div><div class="value warn" id="statDays">12 days</div></div>
+      </div>
+    </div>
+
+    <div class="alert-banner high" id="alertBanner">
+      <div class="alert-icon">!</div>
+      <div class="alert-copy">
+        <div class="title" id="alertTitle">Cash crunch predicted in 12 days</div>
+        <div class="desc" id="alertDesc">Your projected balance dips below zero around 24 July, driven mainly by a supplier restock payment landing before your usual month-end sales pick-up.</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>30-Day Balance Forecast <span>— solid = actual, dashed = AI projection, red zone = risk of shortfall</span></h3>
+        <canvas id="cashChart" height="130"></canvas>
+      </div>
+      <div class="card">
+        <h3>What's driving this</h3>
+        <div id="driversList"></div>
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1fr 1fr;">
+      <div class="card">
+        <h3>Recommended actions <span>— ranked by impact</span></h3>
+        <div id="actionsList"></div>
+      </div>
+      <div class="card">
+        <h3>Recent transactions <span>— mobile money &amp; till feed (simulated)</span></h3>
+        <table class="txn">
+          <thead><tr><th>Date</th><th>Description</th><th>Source</th><th style="text-align:right;">Amount</th></tr></thead>
+          <tbody id="txnBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1fr;">
+      <div class="card">
+        <h3>How this forecast is built <span>— model pipeline (demo)</span></h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;font-size:12.5px;">
+          <div style="padding:12px;background:var(--paper);border-radius:10px;border:1px solid var(--line);"><strong>1. Transaction ingestion</strong><br>Mobile money (Airtel Money / TNM Mpamba) and till transactions are pulled with the owner's consent and categorised into inflows and outflows.</div>
+          <div style="padding:12px;background:var(--paper);border-radius:10px;border:1px solid var(--line);"><strong>2. Pattern detection</strong><br>The model learns each business's seasonal rhythm — pay days, restock cycles, school-fee months — from its own history.</div>
+          <div style="padding:12px;background:var(--paper);border-radius:10px;border:1px solid var(--line);"><strong>3. Forward simulation</strong><br>Known upcoming obligations (loan instalments, supplier invoices) are combined with the learned pattern to simulate the next 30 days of balance.</div>
+          <div style="padding:12px;background:var(--paper);border-radius:10px;border:1px solid var(--line);"><strong>4. Action matching</strong><br>If a shortfall is predicted, the system ranks interventions — from free (shift a payment date) to financial (short-term facility) — by how much runway each buys.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LENDER VIEW -->
+  <div class="main" id="lenderView">
+    <div class="header-row">
+      <div>
+        <h2>NBM Portfolio Risk Monitor</h2>
+        <div class="sub">Aggregated view across enrolled SME clients — for relationship managers</div>
+      </div>
+      <div class="stat-strip" style="margin:0;">
+        <div class="stat"><div class="label">Enrolled SMEs</div><div class="value">6</div></div>
+        <div class="stat"><div class="label">High risk (next 14d)</div><div class="value warn">2</div></div>
+        <div class="stat"><div class="label">Potential facility demand</div><div class="value">MWK 610,000</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Portfolio at a glance</h3>
+      <table class="portfolio-table">
+        <thead><tr><th>Business</th><th>Sector</th><th>Days to crunch</th><th>Risk</th><th>Suggested facility</th></tr></thead>
+        <tbody id="lenderTable"></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Why this matters for NBM <span>— the inclusion case</span></h3>
+      <p style="font-size:13.5px;line-height:1.7;color:var(--ink);">
+        Most micro and small enterprises fail not because the underlying business is unsound, but because of short-term timing mismatches between outflows and inflows.
+        Chikwama Alert gives NBM relationship managers early, consented visibility into which clients are approaching a cash gap — days or weeks before it happens —
+        turning reactive loan applications into proactive, data-backed facility offers. This builds a lending relationship on transaction history rather than
+        collateral alone, which is exactly the kind of inclusive underwriting model most under-40 Malawian entrepreneurs currently fall outside of.
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer class="disclaimer">
+  Chikwama Alert — built for the National Virtual Hackathon for Financial Innovation in Malawi (FINOVATE 2026), COSSIS · MUBAS, sponsored by National Bank of Malawi plc.
+  This is a working UI/data prototype with simulated transaction and forecast data; production use would require explicit customer consent for mobile-money data access under applicable Malawian data protection rules.
+</footer>
+
+<script>
+const SMES = [
+  {name:"Chikondi's Grocery", sector:'Retail / General Store', loc:'Lilongwe', since:2022, balance:184200, sensitivity:'high'},
+  {name:"Blessings Hardware", sector:'Building Materials', loc:'Mzuzu', since:2020, balance:512000, sensitivity:'med'},
+  {name:"Tione Tailoring", sector:'Garments & Uniforms', loc:'Zomba', since:2023, balance:76500, sensitivity:'high'},
+  {name:"Mtendere Agro-Supplies", sector:'Agro-inputs', loc:'Kasungu', since:2019, balance:340000, sensitivity:'med'},
+  {name:"Umodzi Fresh Produce", sector:'Fresh Produce Trading', loc:'Blantyre', since:2021, balance:98700, sensitivity:'low'},
+  {name:"Njobvu Transport Services", sector:'Logistics / Minibus', loc:'Lilongwe', since:2018, balance:220400, sensitivity:'med'},
+];
+
+const DRIVER_LIBRARY = {
+  high: [
+    {name:'Supplier restock payment due', impact:78, color:'var(--red)'},
+    {name:'Slower-than-usual daily sales', impact:56, color:'var(--amber)'},
+    {name:'School-fee season reducing customer spend', impact:44, color:'var(--amber)'},
+    {name:'Loan instalment landing mid-cycle', impact:35, color:'var(--ink-soft)'},
+  ],
+  med: [
+    {name:'Seasonal dip in orders', impact:52, color:'var(--amber)'},
+    {name:'Delayed customer payments (credit sales)', impact:47, color:'var(--amber)'},
+    {name:'Upcoming rent/utility payment', impact:38, color:'var(--ink-soft)'},
+    {name:'Normal restock cycle', impact:30, color:'var(--ink-soft)'},
+  ],
+  low: [
+    {name:'Stable weekly sales pattern', impact:20, color:'var(--green)'},
+    {name:'Minor restock due next week', impact:24, color:'var(--ink-soft)'},
+    {name:'No major obligations upcoming', impact:12, color:'var(--green)'},
+  ]
+};
+
+const ACTION_LIBRARY = {
+  high: [
+    {tag:'Free · Do first', title:'Shift supplier payment by 5 days', desc:"Ask your supplier for a short extension to let this week's sales land first — buys roughly 5–6 days of runway at no cost."},
+    {tag:'NBM Product', title:'Short-term working capital facility', desc:'A 30-day facility sized to your predicted gap (from your dashboard: about MWK 45,000) could bridge the shortfall with minimal interest exposure.'},
+    {tag:'Savings', title:'Draw down your Chikwama buffer', desc:'You have a small savings buffer on record — using part of it now avoids a missed payment and protects your supplier relationship.'},
+  ],
+  med: [
+    {tag:'Free · Do first', title:'Follow up on outstanding credit sales', desc:'A few customers owe you for goods taken on credit — collecting even half of this clears most of the projected gap.'},
+    {tag:'NBM Product', title:'Flexible overdraft line', desc:'A small standby overdraft would smooth this recurring seasonal dip without needing a new loan application each time.'},
+  ],
+  low: [
+    {tag:'Insight', title:"You're in good shape", desc:"No action needed right now — your cash pattern looks stable over the next 30 days. We'll keep watching and alert you if that changes."},
+  ]
+};
+
+function seeded(seed){ let s = seed; return ()=>{ s = (s*9301+49297)%233280; return s/233280; }; }
+
+function buildCashSeries(balance, sensitivity, seed){
+  const rand = seeded(seed);
+  const hist = []; let p = balance * 0.85;
+  for(let i=0;i<20;i++){ p += (rand()-0.42)*balance*0.05; hist.push(Math.round(p)); }
+  const dailyDrift = sensitivity==='high' ? -balance*0.018 : sensitivity==='med' ? -balance*0.004 : balance*0.006;
+  const fut = []; let fp = hist[hist.length-1];
+  for(let i=0;i<14;i++){ fp += dailyDrift + (rand()-0.5)*balance*0.03; fut.push(Math.round(fp)); }
+  return {hist, fut};
+}
+
+function riskLevel(sensitivity, lowPoint){
+  if(sensitivity==='high' || lowPoint < 0) return 'high';
+  if(sensitivity==='med') return 'med';
+  return 'low';
+}
+
+let cashChart, currentIndex = 0;
+
+function render(index){
+  currentIndex = index;
+  const s = SMES[index];
+  const series = buildCashSeries(s.balance, s.sensitivity, index*13+5);
+  const lowPoint = Math.min(...series.fut);
+  const crunchDayIdx = series.fut.findIndex(v=>v<0);
+  const risk = riskLevel(s.sensitivity, lowPoint);
+
+  document.getElementById('bizName').textContent = s.name;
+  document.getElementById('bizMeta').textContent = `${s.sector} · ${s.loc} · Chikwama since ${s.since}`;
+  document.getElementById('statBalance').textContent = `MWK ${series.hist[series.hist.length-1].toLocaleString()}`;
+  document.getElementById('statLow').textContent = `MWK ${lowPoint.toLocaleString()}`;
+  document.getElementById('statLow').className = 'value ' + (lowPoint<0?'warn':'');
+  document.getElementById('statDays').textContent = crunchDayIdx>=0 ? `${crunchDayIdx+1} days` : 'No crunch predicted';
+  document.getElementById('statDays').className = 'value ' + (crunchDayIdx>=0?'warn':'');
+
+  const banner = document.getElementById('alertBanner');
+  banner.className = 'alert-banner ' + risk;
+  const titleEl = document.getElementById('alertTitle');
+  const descEl = document.getElementById('alertDesc');
+  if(risk==='high'){
+    titleEl.textContent = crunchDayIdx>=0 ? `Cash crunch predicted in ${crunchDayIdx+1} days` : `Tight cash window predicted this month`;
+    descEl.textContent = `Your projected balance comes under pressure driven mainly by ${DRIVER_LIBRARY.high[0].name.toLowerCase()} landing before your usual sales pick-up.`;
+  } else if(risk==='med'){
+    titleEl.textContent = `Moderate cash pressure expected`;
+    descEl.textContent = `Balance stays positive but gets thin around a seasonal dip — worth lining up a buffer.`;
+  } else {
+    titleEl.textContent = `Cash position looks healthy`;
+    descEl.textContent = `No shortfall predicted in the next 30 days based on current patterns.`;
+  }
+  document.getElementById('alertBanner').querySelector('.alert-icon').textContent = risk==='low' ? '✓' : '!';
+
+  // drivers
+  const drivers = DRIVER_LIBRARY[risk];
+  const dList = document.getElementById('driversList');
+  dList.innerHTML = '';
+  drivers.forEach(d=>{
+    const row = document.createElement('div');
+    row.className = 'driver-row';
+    row.innerHTML = `<div style="flex:1;">${d.name}</div><div class="driver-bar-track"><div class="driver-bar-fill" style="width:${d.impact}%;background:${d.color};"></div></div><div class="driver-val">${d.impact}%</div>`;
+    dList.appendChild(row);
+  });
+
+  // actions
+  const actions = ACTION_LIBRARY[risk];
+  const aList = document.getElementById('actionsList');
+  aList.innerHTML = '';
+  actions.forEach(a=>{
+    const div = document.createElement('div');
+    div.className = 'action-card';
+    div.innerHTML = `<span class="tag">${a.tag}</span><h4>${a.title}</h4><p>${a.desc}</p><button>Mark as actioned</button>`;
+    aList.appendChild(div);
+  });
+
+  // transactions (mock)
+  const rand = seeded(index*19+2);
+  const descriptions = [
+    ['Customer sale (till)', 'Till', 'in'],
+    ['Airtel Money received', 'Airtel Money', 'in'],
+    ['Supplier payment', 'TNM Mpamba', 'out'],
+    ['Electricity bill (ESCOM)', 'Bank transfer', 'out'],
+    ['Wholesale restock', 'Cash', 'out'],
+    ['Customer sale (mobile money)', 'Mpamba', 'in'],
+    ['Staff wages', 'Cash', 'out'],
+    ['Loan instalment — NBM', 'Bank transfer', 'out'],
+  ];
+  const txnBody = document.getElementById('txnBody');
+  txnBody.innerHTML = '';
+  const today = new Date(2026,6,9);
+  for(let i=0;i<8;i++){
+    const d = new Date(today); d.setDate(d.getDate()-i);
+    const pick = descriptions[Math.floor(rand()*descriptions.length)];
+    const amt = Math.round((rand()*40000+3000));
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</td><td>${pick[0]}</td><td class="src">${pick[1]}</td><td style="text-align:right;" class="amt ${pick[2]}">${pick[2]==='in'?'+':'-'}MWK ${amt.toLocaleString()}</td>`;
+    txnBody.appendChild(row);
+  }
+
+  // chart
+  const labels = [...Array(20).keys()].map(i=>`D-${20-i}`).concat([...Array(14).keys()].map(i=>`D+${i+1}`));
+  const histData = series.hist.concat(Array(14).fill(null));
+  const futData = Array(19).fill(null).concat([series.hist[series.hist.length-1]]).concat(series.fut);
+
+  if(cashChart) cashChart.destroy();
+  cashChart = new Chart(document.getElementById('cashChart'), {
+    type:'line',
+    data:{ labels, datasets:[
+      {label:'Actual balance', data:histData, borderColor:'#152d5c', backgroundColor:'rgba(21,45,92,0.06)', fill:true, tension:0.3, pointRadius:0, borderWidth:2.5},
+      {label:'Forecast', data:futData, borderColor:'#c9a227', borderDash:[6,4], tension:0.3, pointRadius:0, borderWidth:2.5, fill:false},
+      {label:'Zero line', data:Array(34).fill(0), borderColor:'#c1443a', borderWidth:1, pointRadius:0, borderDash:[2,3]}
+    ]},
+    options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{boxWidth:12,font:{size:11}}}},
+      scales:{ y:{ ticks:{ callback:v=>(v/1000)+'k' } }, x:{ ticks:{ maxTicksLimit:8 } } } }
+  });
+
+  document.querySelectorAll('.sme-item').forEach((el,i)=>el.classList.toggle('active', i===index));
+
+  renderLenderTable();
+}
+
+function renderLenderTable(){
+  const tbody = document.getElementById('lenderTable');
+  tbody.innerHTML = '';
+  SMES.forEach((s,i)=>{
+    const series = buildCashSeries(s.balance, s.sensitivity, i*13+5);
+    const lowPoint = Math.min(...series.fut);
+    const crunchDayIdx = series.fut.findIndex(v=>v<0);
+    const risk = riskLevel(s.sensitivity, lowPoint);
+    const facility = risk==='high' ? Math.round(Math.abs(lowPoint)*1.1/1000)*1000 : risk==='med' ? Math.round(Math.abs(lowPoint)*0.6/1000)*1000 : 0;
+    const barPct = risk==='high'?85:risk==='med'?55:20;
+    const barColor = risk==='high'?'var(--red)':risk==='med'?'var(--amber)':'var(--green)';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><strong>${s.name}</strong><br><span style="font-size:11px;color:var(--ink-soft);">${s.loc}</span></td>
+      <td>${s.sector}</td>
+      <td>${crunchDayIdx>=0? (crunchDayIdx+1)+' days' : '—'}</td>
+      <td><span class="mini-bar"><span class="mini-bar-fill" style="width:${barPct}%;background:${barColor};"></span></span><span class="risk-badge ${risk}">${risk.toUpperCase()}</span></td>
+      <td>${facility>0 ? 'MWK '+facility.toLocaleString() : '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildSidebar(){
+  const list = document.getElementById('smeList');
+  SMES.forEach((s,i)=>{
+    const series = buildCashSeries(s.balance, s.sensitivity, i*13+5);
+    const lowPoint = Math.min(...series.fut);
+    const risk = riskLevel(s.sensitivity, lowPoint);
+    const div = document.createElement('div');
+    div.className = 'sme-item';
+    div.innerHTML = `<div class="biz">${s.name}</div><div class="sector">${s.sector} · ${s.loc}</div><span class="risk-chip ${risk}">${risk.toUpperCase()} RISK</span>`;
+    div.onclick = ()=>render(i);
+    list.appendChild(div);
+  });
+}
+
+function setView(view){
+  document.getElementById('ownerView').classList.toggle('active', view==='owner');
+  document.getElementById('lenderView').classList.toggle('active', view==='lender');
+  document.getElementById('btnOwner').classList.toggle('active', view==='owner');
+  document.getElementById('btnLender').classList.toggle('active', view==='lender');
+}
+
+buildSidebar();
+render(0);
+setView('owner');
+</script>
+</body>
+</html>
